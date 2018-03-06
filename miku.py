@@ -251,7 +251,7 @@ async def approve(ctx, *arg):
     if db.unreport(requestee, requestor):
         await bot.say(requestor + ", " + requestee + " has approved your unreport request")
     else:
-        await bot.say(requestor + ", " + requestee + " has not requested any unreport")
+        await bot.say(requestee + ", " + requestor + " has not requested any unreport")
 
 
 @bot.command(pass_context=True)
@@ -271,7 +271,7 @@ async def reject(ctx, *arg):
     if db.delete_request(requestor, requestee):
         await bot.say(requestor + ", " + requestee + " has rejected your unreport request")
     else:
-        await bot.say(requestor + ", " + requestee + " has not requested any unreport")
+        await bot.say(requestee + ", " + requestor + " has not requested any unreport")
 
 
 
