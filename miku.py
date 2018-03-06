@@ -48,11 +48,10 @@ async def request(ctx, *arg):
         await bot.say("Miku would luv to, but Miku doesn't report people >_<")
         return
     log("command:request: %s %s" % (requestor, requestee))
-    if (db.get_report(requestee, requestor))[2] == "0":
-        await bot.say(requestee + " currently has no outstanding reports against " + requestor)
-    else:
-        db.request(requestor, requestee, now())
+    if db.request(requestor, requestee, now()):
         await bot.say(requestee + ", " + requestor + " is requesting you to unreport :)")
+    else:
+        await bot.say(requestee + " currently has no outstanding reports against " + requestor)    
 
 
 @bot.command(pass_context=True)
@@ -235,21 +234,6 @@ async def stats(ctx, *arg):
     await bot.say("%s got reported %s times and reported others %s times :D" % response)
 
 
-@bot.command()
-async def reset(*arg):
-    if len(arg) != 2:
-        return
-    mode = arg[0]
-    user = fixId(arg[1])
-    if isInvalidUserId(user):
-        return
-    if mode != "reportee" and mode != "reporter":
-        return
-    log("command:reset:%s: %s" % (mode, user))
-    rows = db.reset_reports(mode, user)
-    await bot.say("Changed rows: " + str(rows))
-
-
 @bot.command(pass_context=True)
 async def approve(ctx, *arg):
     if len(arg) != 1:
@@ -261,11 +245,10 @@ async def approve(ctx, *arg):
         await bot.say("Are wa dare? Usage: " + prefix + "approve @requestor")
         return
     if isMiku(requestor):
-        await bot.say("Miku doesn't report people, but Miku might change her mind if you keep this you!!")
+        await bot.say("Miku doesn't report people, but Miku might change her mind if you keep this up!!")
         return
     log("command:approve: %s %s" % (requestor, requestee))
-    if db.delete_request(requestor, requestee):
-        db.unreport(requestee, requestor)
+    if db.unreport(requestee, requestor):
         await bot.say(requestor + ", " + requestee + " has approved your unreport request")
     else:
         await bot.say(requestor + ", " + requestee + " has not requested any unreport")
@@ -282,7 +265,7 @@ async def reject(ctx, *arg):
         await bot.say("Are wa dare? Usage: " + prefix + "approve @requestor")
         return
     if isMiku(requestor):
-        await bot.say("Miku doesn't report people, but Miku might change her mind if you keep this you!!")
+        await bot.say("Miku doesn't report people, but Miku might change her mind if you keep this up!!")
         return
     log("command:reject: %s %s" % (requestor, requestee))
     if db.delete_request(requestor, requestee):

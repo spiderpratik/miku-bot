@@ -9,7 +9,7 @@ class dbHelper:
     def report(self, reporter, reportee, t, retry = True):
         try:
             with self.db.cursor() as cursor:
-                affectedRowsCount = cursor.execute("INSERT INTO reports VALUES ('%s', '%s', 1, '%s') ON DUPLICATE KEY UPDATE count = count + 1, last_ts = '%s'" % (reporter, reportee, t, t))
+                affectedRowsCount = cursor.execute("INSERT INTO reports VALUES ('%s', '%s', 1, '%s', NULL) ON DUPLICATE KEY UPDATE count = count + 1, report_ts = '%s'" % (reporter, reportee, t, t))
                 self.db.commit()
             return affectedRowsCount
         except (OperationalError, InterfaceError) as e:
@@ -23,8 +23,9 @@ class dbHelper:
     def request(self, requestor, requestee, t, retry = True):
         try:
             with self.db.cursor() as cursor:
-                affectedRowsCount = cursor.execute("INSERT INTO requests VALUES ('%s', '%s', '%s') ON DUPLICATE KEY UPDATE ts = '%s'" % (requestor, requestee, t, t))
+                affectedRowsCount = cursor.execute("UPDATE reports SET request_ts = '%s' WHERE reporter = '%s' AND reportee = '%s'" % (t, requestee, requestor))
                 self.db.commit()
+            return affectedRowsCount
         except (OperationalError, InterfaceError) as e:
             if retry:
                 self.__init__()
@@ -37,7 +38,7 @@ class dbHelper:
         try:
             with self.db.cursor() as cursor:
                 # affectedRowsCount = cursor.execute("UPDATE reports SET count = count - 1 WHERE reporter = '%s' AND reportee = '%s' AND count > 0" % (reporter, reportee))
-                affectedRowsCount = cursor.execute("DELETE FROM reports WHERE reporter = '%s' AND reportee = '%s'" % (reporter, reportee))
+                affectedRowsCount = cursor.execute("DELETE FROM reports WHERE reporter = '%s' AND reportee = '%s' AND count > 0" % (reporter, reportee))
                 self.db.commit()
             return affectedRowsCount
         except (OperationalError, InterfaceError) as e:
@@ -51,7 +52,7 @@ class dbHelper:
     def get_report(self, reporter, reportee, retry = True):
         try:
             with self.db.cursor() as cursor:
-                cursor.execute("SELECT count, last_ts FROM reports WHERE reporter = '%s' AND reportee = '%s'" % (reporter, reportee))
+                cursor.execute("SELECT count, report_ts FROM reports WHERE reporter = '%s' AND reportee = '%s'" % (reporter, reportee))
                 ans = cursor.fetchone()
             return (reporter, reportee, "0", "") if ans is None else (reporter, reportee, str(ans[0]), "Last reported at " + ans[1])
         except (OperationalError, InterfaceError) as e:
@@ -98,7 +99,7 @@ class dbHelper:
     def get_requests_from(self, requestor, retry = True):
         try:
             with self.db.cursor() as cursor:
-                cursor.execute("SELECT requestee, ts FROM requests WHERE requestor = '%s'" % (requestor))
+                cursor.execute("SELECT reporter, request_ts FROM reports WHERE reportee = '%s'" % (requestor))
             return ", ".join(("%s (%s)" % i) for i in cursor.fetchall())
         except (OperationalError, InterfaceError) as e:
             if retry:
@@ -111,7 +112,7 @@ class dbHelper:
     def get_requests_to(self, requestee, retry = True):
         try:
             with self.db.cursor() as cursor:
-                cursor.execute("SELECT requestor, ts FROM requests WHERE requestee = '%s'" % (requestee))
+                cursor.execute("SELECT reportee, request_ts FROM reports WHERE reporter = '%s'" % (requestee))
             return ", ".join(("%s (%s)" % i) for i in cursor.fetchall())
         except (OperationalError, InterfaceError) as e:
             if retry:
@@ -124,7 +125,7 @@ class dbHelper:
     def delete_request(self, requestor, requestee, retry = True):
         try:
             with self.db.cursor() as cursor:
-                affectedRowsCount = cursor.execute("DELETE FROM requests WHERE requestor = '%s' AND requestee = '%s'" % (requestor, requestee))
+                affectedRowsCount = cursor.execute("UPDATE reports SET request_ts = NULL WHERE reporter = '%s' AND reportee = '%s'" % (requestee, requestor))
                 self.db.commit()
             return affectedRowsCount
         except (OperationalError, InterfaceError) as e:
@@ -157,24 +158,14 @@ class dbHelper:
 # Database: mikuDB
 # Table: reports
 #
-#+----------+----------+------+-----+------------------------+-------+
-#| Field    | Type     | Null | Key | Default                | Extra |
-#+----------+----------+------+-----+------------------------+-------+
-#| reporter | char(40) | NO   | PRI |                        |       |
-#| reportee | char(40) | NO   | PRI |                        |       |
-#| count    | int(11)  | NO   |     | 0                      |       |
-#| last_ts  | char(25) | NO   |     | the beginning of time! |       |
-#+----------+----------+------+-----+------------------------+-------+
-#
-#
-# Table: requests
-#
-#+-----------+----------+------+-----+------------------------+-------+
-#| Field     | Type     | Null | Key | Default                | Extra |
-#+-----------+----------+------+-----+------------------------+-------+
-#| requestor | char(30) | NO   | PRI | NULL                   |       |
-#| requestee | char(30) | NO   | PRI | NULL                   |       |
-#| ts        | char(25) | NO   |     | the beginning of time! |       |
-#+-----------+----------+------+-----+------------------------+-------+
+#+------------+----------+------+-----+------------------------+-------+
+#| Field      | Type     | Null | Key | Default                | Extra |
+#+------------+----------+------+-----+------------------------+-------+
+#| reporter   | char(40) | NO   | PRI |                        |       |
+#| reportee   | char(40) | NO   | PRI |                        |       |
+#| count      | int(11)  | NO   |     | 0                      |       |
+#| report_ts  | char(25) | NO   |     | the beginning of time! |       |
+#| request_ts | char(25) | YES  |     | the beginning of time! |       |
+#+------------+----------+------+-----+------------------------+-------+
 #
 
