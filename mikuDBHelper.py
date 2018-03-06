@@ -99,7 +99,7 @@ class dbHelper:
     def get_requests_from(self, requestor, retry = True):
         try:
             with self.db.cursor() as cursor:
-                cursor.execute("SELECT reporter, request_ts FROM reports WHERE reportee = '%s'" % (requestor))
+                cursor.execute("SELECT reporter, request_ts FROM reports WHERE reportee = '%s' AND request_ts IS NOT NULL" % (requestor))
             return ", ".join(("%s (%s)" % i) for i in cursor.fetchall())
         except (OperationalError, InterfaceError) as e:
             if retry:
@@ -112,7 +112,7 @@ class dbHelper:
     def get_requests_to(self, requestee, retry = True):
         try:
             with self.db.cursor() as cursor:
-                cursor.execute("SELECT reportee, request_ts FROM reports WHERE reporter = '%s'" % (requestee))
+                cursor.execute("SELECT reportee, request_ts FROM reports WHERE reporter = '%s' AND request_ts IS NOT NULL" % (requestee))
             return ", ".join(("%s (%s)" % i) for i in cursor.fetchall())
         except (OperationalError, InterfaceError) as e:
             if retry:
