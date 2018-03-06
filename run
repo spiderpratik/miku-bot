@@ -1,0 +1,20 @@
+export DISCORD_TOKEN=NDE3MDM2NjI1NzI2NTM3NzU4.DXNLJg.E4IaRYgBTVhq6dthXybI1ZZBW00
+
+while true
+do
+    now=`date`
+    echo $now Starting Miku Bot
+    echo $now Starting Miku Bot >>main.log
+    echo $now Starting Miku Bot >>error.log
+
+    python3.6 miku.py 2>>error.log
+
+    echo Miku died :/ Restarting...
+    echo Miku died :/ Restarting... >>main.log
+    echo Miku died :/ Restarting... >>error.log
+
+    sleep 3
+done
+
+echo Exiting...
+
