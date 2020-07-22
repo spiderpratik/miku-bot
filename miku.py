@@ -7,121 +7,122 @@ from os import environ
 
 prefix = "?miku "
 bot = commands.Bot(command_prefix = prefix)
-db = dbHelper()
+
+# db = dbHelper()
 
 
 @bot.event
 async def on_ready():
     log("event:on_ready: bot online - " + bot.user.name)
-    await bot.change_presence(game = discord.Game(name = "Let's Report People!"))
+    await bot.change_presence(activity = discord.Game(name = "Let's Report People!"))
 
 
 @bot.command()
-async def health(*arg):
+async def health(ctx, *arg):
     db.__init__()
-    await bot.say("OK")
+    await ctx.send("OK")
 
 
-@bot.command(pass_context=True)
+@bot.command()
 async def hello(ctx, *arg):
     if len(arg) == 0:
-        await bot.say("Konnichiwa " + getEventOwnerId(ctx) + "!")
+        await ctx.send("Konnichiwa " + getEventOwnerId(ctx) + "!")
 
 
-@bot.command(pass_context=True)
+@bot.command()
 async def bye(ctx, *arg):
     if len(arg) == 0:
-        await bot.say("kthxbi " + getEventOwnerId(ctx) + "!")
+        await ctx.send("kthxbi " + getEventOwnerId(ctx) + "!")
 
 
-@bot.command(pass_context=True)
+@bot.command()
 async def request(ctx, *arg):
     if len(arg) != 1:
-        await bot.say("Invalid Syntax! Baaaka! Usage: " + prefix + "request @user")
+        await ctx.send("Invalid Syntax! Baaaka! Usage: " + prefix + "request @user")
         return
     requestor = getEventOwnerId(ctx)
     requestee = fixId(arg[0])
     if isInvalidUserId(requestee):
-        await bot.say("Are wa dare? Usage: " + prefix + "request @user")
+        await ctx.send("Are wa dare? Usage: " + prefix + "request @user")
         return
     if isMiku(requestee):
-        await bot.say("Miku would luv to, but Miku doesn't report people >_<")
+        await ctx.send("Miku would luv to, but Miku doesn't report people >_<")
         return
     log("command:request: %s %s" % (requestor, requestee))
     if db.request(requestor, requestee, now()):
-        await bot.say(requestee + ", " + requestor + " is requesting you to unreport :)")
+        await ctx.send(requestee + ", " + requestor + " is requesting you to unreport :)")
     else:
-        await bot.say(requestee + " currently has no outstanding reports against " + requestor)    
+        await ctx.send(requestee + " currently has no outstanding reports against " + requestor)    
 
 
-@bot.command(pass_context=True)
+@bot.command()
 async def requests(ctx, *arg):
     if len(arg) != 0:
-        await bot.say("Invalid Syntax! Baaaka! Usage: " + prefix + "requests")
+        await ctx.send("Invalid Syntax! Baaaka! Usage: " + prefix + "requests")
         return
     user = getEventOwnerId(ctx)
     requests_from_me = db.get_requests_from(user)
     requests_to_me = db.get_requests_to(user)
     log("command:requests: %s" % (user))
     if len(requests_from_me) and len(requests_to_me):
-        await bot.say(user + " has requested unreports from: " + requests_from_me + "\nAnd the following have requested unreports from " + user + ": " + requests_to_me)
+        await ctx.send(user + " has requested unreports from: " + requests_from_me + "\nAnd the following have requested unreports from " + user + ": " + requests_to_me)
     elif not len(requests_from_me) and len(requests_to_me):
-        await bot.say("The following have requested unreports from " + user + ": " + requests_to_me)
+        await ctx.send("The following have requested unreports from " + user + ": " + requests_to_me)
     elif len(requests_from_me) and not len(requests_to_me):
-        await bot.say(user + " has requested unreports from: " + requests_from_me)
+        await ctx.send(user + " has requested unreports from: " + requests_from_me)
     else:
-        await bot.say("No requests for " + user + " :)")
+        await ctx.send("No requests for " + user + " :)")
 
 
-@bot.command(pass_context=True)
+@bot.command()
 async def report(ctx, *arg):
     if len(arg) != 1 and (len(arg) < 3 or arg[1] != "for"):
-        await bot.say("Invalid Syntax! Baaaka! Usage: " + prefix + "report @user [ for <reason> ]")
+        await ctx.send("Invalid Syntax! Baaaka! Usage: " + prefix + "report @user [ for <reason> ]")
         return
     reporter = getEventOwnerId(ctx)
     reportee = fixId(arg[0])
     if isInvalidUserId(reportee):
-        await bot.say("Are wa dare? Usage: " + prefix + "report @user [ for <reason> ]")
+        await ctx.send("Are wa dare? Usage: " + prefix + "report @user [ for <reason> ]")
         return
     if isMiku(reportee):
-        await bot.say("Yowai ningen... Watashi wa kamida!!")
+        await ctx.send("Yowai ningen... Watashi wa kamida!!")
         return
     if reporter == reportee:
-        await bot.say("I know you're a fool, but don't prove it by reporting yourself >_<")
+        await ctx.send("I know you're a fool, but don't prove it by reporting yourself >_<")
         return
     log("command:report: %s %s" % (reporter, reportee))
     db.report(reporter, reportee, now())
-    await bot.say(reporter + " just reported " + reportee + " " + " ".join(arg[1:]))
+    await ctx.send(reporter + " just reported " + reportee + " " + " ".join(arg[1:]))
 
 
-@bot.command(pass_context=True)
+@bot.command()
 async def unreport(ctx, *arg):
     if len(arg) != 1:
-        await bot.say("Invalid Syntax! Baaaka! Usage: " + prefix + "unreport @user")
+        await ctx.send("Invalid Syntax! Baaaka! Usage: " + prefix + "unreport @user")
         return
     reporter = getEventOwnerId(ctx)
     reportee = fixId(arg[0])
     if isInvalidUserId(reportee):
-        await bot.say("Are wa dare? Usage: " + prefix + "unreport @user")
+        await ctx.send("Are wa dare? Usage: " + prefix + "unreport @user")
         return
     if isMiku(reportee):
-        await bot.say("Arigato :) but fyi, you can never report me...")
+        await ctx.send("Arigato :) but fyi, you can never report me...")
         return
     if reporter == reportee:
-        await bot.say("...? Anta honki ka?")
+        await ctx.send("...? Anta honki ka?")
         return
     log("command:unreport: %s %s" % (reporter, reportee))
     if db.unreport(reporter, reportee):
         db.delete_request(reportee, reporter)
-        await bot.say(reporter + " did a good deed and unreported " + reportee)
+        await ctx.send(reporter + " did a good deed and unreported " + reportee)
     else:
-        await bot.say("Sugoi! " + reporter + " doesn't have any reports for " + reportee)
+        await ctx.send("Sugoi! " + reporter + " doesn't have any reports for " + reportee)
 
 
-@bot.command(pass_context=True)
+@bot.command()
 async def reported(ctx, *arg):
     if len(arg) != 1 and len(arg) != 2:
-        await bot.say("Anta baka desu ka? Usage: " + prefix + "reported @user_reportee [ @user_reporter=self ]")
+        await ctx.send("Anta baka desu ka? Usage: " + prefix + "reported @user_reportee [ @user_reporter=self ]")
         return
     if len(arg) == 2:
         reporter = fixId(arg[1])
@@ -129,77 +130,77 @@ async def reported(ctx, *arg):
         reporter = getEventOwnerId(ctx)
     reportee = fixId(arg[0])
     if isInvalidUserId(reporter) or isInvalidUserId(reportee):
-        await bot.say("Are wa dare? Usage: " + prefix + "reported @reportee [ @reporter=self ]")
+        await ctx.send("Are wa dare? Usage: " + prefix + "reported @reportee [ @reporter=self ]")
         return
     if isMiku(reportee):
-        await bot.say("Such cute kidz... Kawaiii")
+        await ctx.send("Such cute kidz... Kawaiii")
         return
     if reporter == reportee:
-        await bot.say("Try reporting yourself! Nani? Omae wa mou shindeiru!!")
+        await ctx.send("Try reporting yourself! Nani? Omae wa mou shindeiru!!")
         return
     log("command:reported: %s %s" % (reporter, reportee))
     response = db.get_report(reporter, reportee)
-    await bot.say("%s reported %s %s times... %s" % response)
+    await ctx.send("%s reported %s %s times... %s" % response)
 
 
-@bot.command(pass_context=True)
+@bot.command()
 async def reporter(ctx, *arg):
     if len(arg) > 1:
-        await bot.say("Anata wa hontoni bakada! Usage: " + prefix + "reporter [ @reporter=self ]")
+        await ctx.send("Anata wa hontoni bakada! Usage: " + prefix + "reporter [ @reporter=self ]")
         return
     if len(arg) == 1:
         user = fixId(arg[0])
         if isInvalidUserId(user):
-            await bot.say("Are wa dare? Usage: " + prefix + "reporter [ @reporter=self ]")
+            await ctx.send("Are wa dare? Usage: " + prefix + "reporter [ @reporter=self ]")
             return
         if isMiku(user):
-            await bot.say("Miku is a good girl nyah! She doesn't report people nyaa..")
+            await ctx.send("Miku is a good girl nyah! She doesn't report people nyaa..")
             return
     else:
         user = getEventOwnerId(ctx)
     log("command:reporter: " + user)
     response = db.get_report_verbose("reporter", user)
     if response:
-        await bot.say(user + " reported all these bad people: " + response)
+        await ctx.send(user + " reported all these bad people: " + response)
     else:
-        await bot.say(user + " hasn't reported anyone recently")
+        await ctx.send(user + " hasn't reported anyone recently")
 
 
-@bot.command(pass_context=True)
+@bot.command()
 async def reportee(ctx, *arg):
     if len(arg) > 1:
-        await bot.say("Anata wa hontoni bakada! Usage: " + prefix + "reportee [ @reportee=self ]")
+        await ctx.send("Anata wa hontoni bakada! Usage: " + prefix + "reportee [ @reportee=self ]")
         return
     if len(arg) == 1:
         user = fixId(arg[0])
         if isInvalidUserId(user):
-            await bot.say("Are wa dare? Usage: " + prefix + "reportee [ @reportee=self ]")
+            await ctx.send("Are wa dare? Usage: " + prefix + "reportee [ @reportee=self ]")
             return
         if isMiku(user):
-            await bot.say("Miku is a good girl nyah! Noone wants to report her nyaa..")
+            await ctx.send("Miku is a good girl nyah! Noone wants to report her nyaa..")
             return
     else:
         user = getEventOwnerId(ctx)
     log("command:reportee: " + user)
     response = db.get_report_verbose("reportee", user)
     if response:
-        await bot.say(user + " was reported by all these nice people: " + response)
+        await ctx.send(user + " was reported by all these nice people: " + response)
     else:
-        await bot.say(user + " hasn't been reported by anyone recently")
+        await ctx.send(user + " hasn't been reported by anyone recently")
 
 
-@bot.command(pass_context=True)
+@bot.command()
 async def reports(ctx, *arg):
     if len(arg) > 1:
-        await bot.say("Anata wa hontoni bakada! Usage: " + prefix + "reportee [ @reportee=self ]")
+        await ctx.send("Anata wa hontoni bakada! Usage: " + prefix + "reportee [ @reportee=self ]")
         return
     if len(arg) == 1:
         user = fixId(arg[0])
         if isInvalidUserId(user):
-            await bot.say("Are wa dare? Usage: " + prefix + "reportee [ @reportee=self ]")
+            await ctx.send("Are wa dare? Usage: " + prefix + "reportee [ @reportee=self ]")
             return
         if isMiku(user):
-            await bot.say("Miku is a good girl nyah! Noone wants to report her nyaa..")
+            await ctx.send("Miku is a good girl nyah! Noone wants to report her nyaa..")
             return
     else:
         user = getEventOwnerId(ctx)
@@ -214,68 +215,65 @@ async def reports(ctx, *arg):
         response += user + " was reported by all these nice people: " + res
     else:
         response += user + " hasn't been reported by anyone recently"
-    await bot.say(response)
+    await ctx.send(response)
 
 
-@bot.command(pass_context=True)
+@bot.command()
 async def stats(ctx, *arg):
     if len(arg) > 1:
-        await bot.say("Anata wa hontoni bakada! Usage: " + prefix + "stats [ @user=self ]")
+        await ctx.send("Anata wa hontoni bakada! Usage: " + prefix + "stats [ @user=self ]")
         return
     if len(arg) == 1:
         user = fixId(arg[0])
         if isInvalidUserId(user):
-            await bot.say("Are wa dare? Usage: " + prefix + "stats [ @user=self ]")
+            await ctx.send("Are wa dare? Usage: " + prefix + "stats [ @user=self ]")
             return
     else:
         user = getEventOwnerId(ctx)
     log("command:stats: " + user)
     response = db.get_report_aggregated(user)
-    await bot.say("%s got reported %s times and reported others %s times :D" % response)
+    await ctx.send("%s got reported %s times and reported others %s times :D" % response)
 
 
-@bot.command(pass_context=True)
+@bot.command()
 async def approve(ctx, *arg):
     if len(arg) != 1:
-        await bot.say("Invalid Syntax! Baaaka! Usage: " + prefix + "approve @requestor")
+        await ctx.send("Invalid Syntax! Baaaka! Usage: " + prefix + "approve @requestor")
         return
     requestor = fixId(arg[0])
     requestee = getEventOwnerId(ctx)
     if isInvalidUserId(requestor):
-        await bot.say("Are wa dare? Usage: " + prefix + "approve @requestor")
+        await ctx.send("Are wa dare? Usage: " + prefix + "approve @requestor")
         return
     if isMiku(requestor):
-        await bot.say("Miku doesn't report people, but Miku might change her mind if you keep this up!!")
+        await ctx.send("Miku doesn't report people, but Miku might change her mind if you keep this up!!")
         return
     log("command:approve: %s %s" % (requestor, requestee))
     if db.unreport(requestee, requestor):
-        await bot.say(requestor + ", " + requestee + " has approved your unreport request")
+        await ctx.send(requestor + ", " + requestee + " has approved your unreport request")
     else:
-        await bot.say(requestee + ", " + requestor + " has not requested any unreport")
+        await ctx.send(requestee + ", " + requestor + " has not requested any unreport")
 
 
-@bot.command(pass_context=True)
+@bot.command()
 async def reject(ctx, *arg):
     if len(arg) != 1:
-        await bot.say("Invalid Syntax! Baaaka! Usage: " + prefix + "reject @requestor")
+        await ctx.send("Invalid Syntax! Baaaka! Usage: " + prefix + "reject @requestor")
         return
     requestor = fixId(arg[0])
     requestee = getEventOwnerId(ctx)
     if isInvalidUserId(requestor):
-        await bot.say("Are wa dare? Usage: " + prefix + "approve @requestor")
+        await ctx.send("Are wa dare? Usage: " + prefix + "approve @requestor")
         return
     if isMiku(requestor):
-        await bot.say("Miku doesn't report people, but Miku might change her mind if you keep this up!!")
+        await ctx.send("Miku doesn't report people, but Miku might change her mind if you keep this up!!")
         return
     log("command:reject: %s %s" % (requestor, requestee))
     if db.delete_request(requestor, requestee):
-        await bot.say(requestor + ", " + requestee + " has rejected your unreport request")
+        await ctx.send(requestor + ", " + requestee + " has rejected your unreport request")
     else:
-        await bot.say(requestee + ", " + requestor + " has not requested any unreport")
+        await ctx.send(requestee + ", " + requestor + " has not requested any unreport")
 
 
 
 bot.run(environ.get("DISCORD_TOKEN"))
-
-
-

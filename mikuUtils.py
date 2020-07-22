@@ -16,10 +16,7 @@ def fixId(string):
 
 
 def getEventOwnerId(ctx):
-    author = ctx.message.author.id
-    if len(author) > 1 and author[0] == "!":
-        author = author[1:]
-    return "<@" + author + ">"
+    return "<@" + str(ctx.message.author.id) + ">"
 
 
 def log(msg):
