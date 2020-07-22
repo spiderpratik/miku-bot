@@ -8,7 +8,7 @@ from os import environ
 prefix = "?miku "
 bot = commands.Bot(command_prefix = prefix)
 
-# db = dbHelper()
+db = dbHelper()
 
 
 @bot.event
